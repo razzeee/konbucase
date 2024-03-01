@@ -128,13 +128,13 @@ public class Application : Adw.Application {
     }
 
     protected override void startup () {
-        base.startup ();
-
 #if USE_GRANITE
         if (IS_ON_PANTHEON) {
             Granite.init ();
         }
 #endif
+
+        base.startup ();
 
         Intl.setlocale (LocaleCategory.ALL, "");
         Intl.bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
