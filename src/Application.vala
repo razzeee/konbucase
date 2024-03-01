@@ -3,7 +3,7 @@
  * SPDX-FileCopyrightText: 2020-2024 Ryo Nakano <ryonakaknock3@gmail.com>
  */
 
-public class Application : Gtk.Application {
+public class Application : Adw.Application {
     public static bool IS_ON_PANTHEON {
         get {
             return Environment.get_variable ("XDG_CURRENT_DESKTOP") == "Pantheon";
@@ -16,7 +16,6 @@ public class Application : Gtk.Application {
         { "quit", on_quit_activate },
     };
     private MainWindow window;
-    private StyleManager style_manager;
 
     public Application () {
         Object (
@@ -36,11 +35,11 @@ public class Application : Gtk.Application {
             return false;
         }
 
-        var val = (StyleManager.ColorScheme) variant.get_int32 ();
+        var val = (Adw.ColorScheme) variant.get_int32 ();
         switch (val) {
-            case StyleManager.ColorScheme.DEFAULT:
-            case StyleManager.ColorScheme.FORCE_LIGHT:
-            case StyleManager.ColorScheme.FORCE_DARK:
+            case Adw.ColorScheme.DEFAULT:
+            case Adw.ColorScheme.FORCE_LIGHT:
+            case Adw.ColorScheme.FORCE_DARK:
                 to_value.set_enum (val);
                 break;
             default:
@@ -52,11 +51,11 @@ public class Application : Gtk.Application {
     }
 
     private bool style_action_transform_from_cb (Binding binding, Value from_value, ref Value to_value) {
-        var val = (StyleManager.ColorScheme) from_value;
+        var val = (Adw.ColorScheme) from_value;
         switch (val) {
-            case StyleManager.ColorScheme.DEFAULT:
-            case StyleManager.ColorScheme.FORCE_LIGHT:
-            case StyleManager.ColorScheme.FORCE_DARK:
+            case Adw.ColorScheme.DEFAULT:
+            case Adw.ColorScheme.FORCE_LIGHT:
+            case Adw.ColorScheme.FORCE_DARK:
                 to_value.set_variant (new Variant.int32 (val));
                 break;
             default:
@@ -68,17 +67,17 @@ public class Application : Gtk.Application {
     }
 
     private static bool color_scheme_get_mapping_cb (Value value, Variant variant, void* user_data) {
-        // Convert from the "style" enum defined in the gschema to StyleManager.ColorScheme
+        // Convert from the "style" enum defined in the gschema to Adw.ColorScheme
         var val = variant.get_string ();
         switch (val) {
             case Define.Style.DEFAULT:
-                value.set_enum (StyleManager.ColorScheme.DEFAULT);
+                value.set_enum (Adw.ColorScheme.DEFAULT);
                 break;
             case Define.Style.LIGHT:
-                value.set_enum (StyleManager.ColorScheme.FORCE_LIGHT);
+                value.set_enum (Adw.ColorScheme.FORCE_LIGHT);
                 break;
             case Define.Style.DARK:
-                value.set_enum (StyleManager.ColorScheme.FORCE_DARK);
+                value.set_enum (Adw.ColorScheme.FORCE_DARK);
                 break;
             default:
                 warning ("color_scheme_get_mapping_cb: Invalid style: %s", val);
@@ -91,20 +90,20 @@ public class Application : Gtk.Application {
     private static Variant color_scheme_set_mapping_cb (Value value, VariantType expected_type, void* user_data) {
         string color_scheme;
 
-        // Convert from StyleManager.ColorScheme to the "style" enum defined in the gschema
-        var val = (StyleManager.ColorScheme) value;
+        // Convert from Adw.ColorScheme to the "style" enum defined in the gschema
+        var val = (Adw.ColorScheme) value;
         switch (val) {
-            case StyleManager.ColorScheme.DEFAULT:
+            case Adw.ColorScheme.DEFAULT:
                 color_scheme = Define.Style.DEFAULT;
                 break;
-            case StyleManager.ColorScheme.FORCE_LIGHT:
+            case Adw.ColorScheme.FORCE_LIGHT:
                 color_scheme = Define.Style.LIGHT;
                 break;
-            case StyleManager.ColorScheme.FORCE_DARK:
+            case Adw.ColorScheme.FORCE_DARK:
                 color_scheme = Define.Style.DARK;
                 break;
             default:
-                warning ("color_scheme_set_mapping_cb: Invalid StyleManager.ColorScheme: %d", val);
+                warning ("color_scheme_set_mapping_cb: Invalid Adw.ColorScheme: %d", val);
                 // fallback to default
                 color_scheme = Define.Style.DEFAULT;
                 break;
@@ -114,10 +113,8 @@ public class Application : Gtk.Application {
     }
 
     private void setup_style () {
-        style_manager = StyleManager.get_default ();
-
         var style_action = new SimpleAction.stateful (
-            "color-scheme", VariantType.INT32, new Variant.int32 (StyleManager.ColorScheme.DEFAULT)
+            "color-scheme", VariantType.INT32, new Variant.int32 (Adw.ColorScheme.DEFAULT)
         );
         style_action.bind_property ("state", style_manager, "color-scheme",
                                     BindingFlags.BIDIRECTIONAL | BindingFlags.SYNC_CREATE,
@@ -132,6 +129,12 @@ public class Application : Gtk.Application {
 
     protected override void startup () {
         base.startup ();
+
+#if USE_GRANITE
+        if (IS_ON_PANTHEON) {
+            Granite.init ();
+        }
+#endif
 
         Intl.setlocale (LocaleCategory.ALL, "");
         Intl.bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);

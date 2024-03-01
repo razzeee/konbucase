@@ -3,8 +3,8 @@
  * SPDX-FileCopyrightText: 2020-2024 Ryo Nakano <ryonakaknock3@gmail.com>
  */
 
-public class MainWindow : Gtk.ApplicationWindow {
-    private Granite.Toast toast;
+public class MainWindow : Adw.ApplicationWindow {
+    private Adw.ToastOverlay overlay;
 
     public MainWindow (Application app) {
         Object (
@@ -36,16 +36,14 @@ public class MainWindow : Gtk.ApplicationWindow {
         main_box.append (separator);
         main_box.append (result_combo_entry);
 
-        toast = new Granite.Toast (_("Text copied!"));
-
-        var overlay = new Gtk.Overlay ();
-        overlay.add_overlay (main_box);
-        overlay.add_overlay (toast);
+        overlay = new Adw.ToastOverlay () {
+            child = main_box
+        };
 
         var style_submenu = new Menu ();
-        style_submenu.append (_("Light"), "app.color-scheme(%d)".printf (StyleManager.ColorScheme.FORCE_LIGHT));
-        style_submenu.append (_("Dark"), "app.color-scheme(%d)".printf (StyleManager.ColorScheme.FORCE_DARK));
-        style_submenu.append (_("System"), "app.color-scheme(%d)".printf (StyleManager.ColorScheme.DEFAULT));
+        style_submenu.append (_("Light"), "app.color-scheme(%d)".printf (Adw.ColorScheme.FORCE_LIGHT));
+        style_submenu.append (_("Dark"), "app.color-scheme(%d)".printf (Adw.ColorScheme.FORCE_DARK));
+        style_submenu.append (_("System"), "app.color-scheme(%d)".printf (Adw.ColorScheme.DEFAULT));
 
         var menu = new Menu ();
         menu.append_submenu (_("Style"), style_submenu);
@@ -57,11 +55,14 @@ public class MainWindow : Gtk.ApplicationWindow {
             primary = true
         };
 
-        var header = new Gtk.HeaderBar ();
+        var header = new Adw.HeaderBar ();
         header.pack_end (menu_button);
-        set_titlebar (header);
 
-        child = overlay;
+        var toolbar_view = new Adw.ToolbarView ();
+        toolbar_view.add_top_bar (header);
+        toolbar_view.set_content (overlay);
+
+        content = toolbar_view;
         width_request = 700;
         height_request = 500;
 
@@ -72,6 +73,7 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
 
     private void show_toast () {
-        toast.send_notification ();
+        var toast = new Adw.Toast (_("Text copied!"));
+        overlay.add_toast (toast);
     }
 }
